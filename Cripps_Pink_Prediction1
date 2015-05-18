@@ -1,0 +1,17 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+# import csv
+df = pd.read_csv('/home/harryj/Documents/RSA/Data/cripps20112014.csv')
+
+Moving_Average = (np.cumsum(df['value'][-52:])/52)
+Moving_Average = Moving_Average[-1:] * 0.87364
+
+print Moving_Average
+
+Prediction_209 = df['value'][208]*0.00191 + df['value'][207]*0.02550 + df['value'][156]*0.00966 + df['value'][104]*0.07752 + Moving_Average
+
+print Prediction_209
+print df[-1:]
