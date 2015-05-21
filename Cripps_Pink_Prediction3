@@ -1,0 +1,76 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# data directory
+DATA = '/home/harryj/Documents/RSA/Data/cripps20112014.csv'
+
+# Define sum weightings as constants
+lastValueW = 0.001913372
+Week1W = 0.0255509727
+Year1W = 0.00966464649
+Year2W = 0.007528915
+MAw = 0.883648789
+MALength = 52
+
+# define prediction function
+def predict_single(X):
+
+    last_value = X - 1
+    MA_start = last_value - 52
+    MA_stop = MA_start + MALength
+    comp1week = X - 2
+    comp1year = X - 52
+    comp2year = X - 104
+    compMA = np.mean(df['value'][MA_start:last_value])
+    predicted = df['value'][last_value]*lastValueW + df['value'][comp1week]*Week1W + df['value'][comp1year]*Year1W + df['value'][comp2year]*Year2W + compMA * MAw
+
+    return predicted
+
+
+#function for full year of predictions, where X is start point of the array
+def predict_year(X):
+
+    predictions = 0
+    year_start = X - 52
+    new_point = X - 52
+
+    # create prediction dataframe
+    columns = ['date', 'value']
+    index = range(51)
+    predict_array = pd.DataFrame(columns=columns, index=index)
+
+    for x in range(0, 51):
+
+        #define predicted value in a new array
+        predict_array['value'][predictions] = predict_single(new_point)
+        predict_array['date'][predictions] = df['date'][new_point]
+
+        predictions += 1
+        new_point += 1
+
+    return predict_array
+
+
+#plot results
+def plot_array(array):
+
+    plt.plot(array.index, array['value'])
+    plt.xlabel('date')
+    plt.ylabel('value')
+    plt.title('RSA: Predicted Cripps Pink Apples against actual Cripps Pink Apples')
+
+
+# import csv
+df = pd.read_csv(DATA)
+
+#print predicted value for 209
+print predict_single(209)
+
+#print actual value at 209
+print df['value'][-1:].values
+
+#plot results
+plot_array(predict_year(209))
+plot_array(df[-52:])
+plt.show()
