@@ -27,10 +27,11 @@ class Prediction:
 
     # define prediction function
     def predict(self):
+        
+        targetpos = self.X
 
-        while self.X <= self.Y:
+        while targetpos <= self.Y:
 
-            targetpos = self.X
             actualvalue = self.df['value'][self.X]
             lastvalue = targetpos - 1
             ma_start = lastvalue - self.ma_length
