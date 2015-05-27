@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class Prediction:
 
@@ -11,11 +12,12 @@ class Prediction:
         self.DATA = '/home/ronald/data/cripps20112014.csv'
 
         # Define sum weightings as constants
-        self.LastValueW = 0.001913372
+        self.LastValueW = 0.071913372
         self.Week1W = 0.0255509727
         self.Year1W = 0.00966464649
         self.Year2W = 0.007528915
         self.MaW = 0.883648789
+        print 'Sum of weights is', self.LastValueW + self.Week1W + self.Year1W + self.Year2W + self.MaW
 
         # define moving average length
         self.ma_length = 52
@@ -32,7 +34,8 @@ class Prediction:
 
         while targetpos <= self.Y:
 
-            actualvalue = self.df['value'][self.X]
+            actualvalue = self.df['value'][targetpos]
+            #print 'actual value for week', targetpos, 'is', actualvalue
             lastvalue = targetpos - 1
             ma_start = lastvalue - self.ma_length
             comp1week = targetpos - 2
@@ -41,10 +44,12 @@ class Prediction:
             comp_ma = np.mean(self.df['value'][ma_start:lastvalue])
 
             predicted = self.df['value'][lastvalue] * self.LastValueW + self.df['value'][comp1week] * self.Week1W + self.df['value'][comp1year] * self.Year1W + self.df['value'][comp2year] * self.Year2W + comp_ma * self.MaW
+            #print 'predicted value for week', targetpos, 'is', predicted
 
             self.df['predictedvalue'][targetpos] = predicted
 
-            self.error = (predicted - actualvalue)/(actualvalue)
+            self.error = abs((predicted - actualvalue)/(actualvalue))
+            #print 'error for week', targetpos, 'is', self.error, '\n'
 
             self.df['error'][targetpos] = self.error
 
@@ -53,7 +58,13 @@ class Prediction:
 
         #print self.df['predictedvalue'][self.X:self.Y]
 
-        return self.df[['predictedvalue','error']][self.X:self.Y]
+        return self.df[['predictedvalue','error', 'value']][self.X:self.Y]
 
 p124 = Prediction(124,176)
 print p124.predict()
+
+#plt.plot(p124.predict().index, p124.predict()['value'], 'r-')
+#plt.plot(p124.predict().index, p124.predict()['predictedvalue'])
+#plt.plot(p124.predict().index, p124.predict()['error'])
+#plt.axis([p124.X, p124.Y, 3, 15])
+#plt.show()
