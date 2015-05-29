@@ -68,7 +68,7 @@ class Prediction:
 
             self.df['predictedvalue'][target_pos] = predicted
 
-            self.error = (predicted - actual_value)/(actual_value)
+            self.error = abs((predicted - actual_value)/(actual_value))
 
             self.df['error'][target_pos] = self.error
 
@@ -97,7 +97,7 @@ class Prediction:
 def plot(source):
     plt.plot(source.index, source['predictedvalue'], 'r-')
     plt.plot(source.index, source['value'], 'b-')
-    #plt.plot(source.index, source['error'], 'r^')
+    plt.plot(source.index, source['error']*10, 'r^')
     plt.xlabel('date')
     plt.ylabel('value')
     plt.title('RSA: Predicted CP Apples (red) vs. Actual CP Apples (blue)')
