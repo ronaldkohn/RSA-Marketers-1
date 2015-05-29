@@ -2,6 +2,24 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+class CleanData:
+    def __init__(self, start, end):
+
+        self.start = start
+        self.end = end
+
+        self.df = pd.read_csv('/home/harryj/Documents/RSA/Data/cripps20112014.csv')
+        self.df['date'] = pd.Series([pd.to_datetime(date) for date in self.df['date']])
+        self.df = self.df.set_index(['date'])
+
+    def clean_data(self):
+
+        idx = pd.date_range(self.start, self.end, periods=None, freq='D')
+        self.df = self.df.reindex(idx)
+        self.df = self.df.fillna(method='pad')
+        return self.df
+
+
 class Prediction:
 
     def __init__(self, X, Y):
@@ -12,59 +30,81 @@ class Prediction:
         self.DATA = '/home/ronald/data/cripps20112014.csv'
 
         # Define sum weightings as constants
-        self.LastValueW = 0.071913372
-        self.Week1W = 0.0255509727
-        self.Year1W = 0.00966464649
-        self.Year2W = 0.007528915
-        self.MaW = 0.883648789
-        print 'Sum of weights is', self.LastValueW + self.Week1W + self.Year1W + self.Year2W + self.MaW
+        self.LAST_VALUE_W = 0.018002537
+        self.WEEK_1_W = 0.318200251
+        self.YEAR_1_W = 0.029406001
+        self.YEAR_2_W = 0.223831008
+        self.MOVING_AVERAGE_W = 0.408821425
 
         # define moving average length
-        self.ma_length = 52
+        self.MOVING_AVERAGE_LENGTH = 52
 
         # import csv
         self.df = pd.read_csv(self.DATA)
         self.df['predictedvalue'] = np.nan
         self.df['error'] = np.nan
+        self.ERRORQ1 = None
+        self.ERRORQ2 = None
+        self.ERRORQ3 = None
+        self.ERRORQ4 = None
+        self.TOTAL_ERROR = None
 
     # define prediction function
     def predict(self):
 
-        targetpos = self.X
+        target_pos = self.X
 
-        while targetpos <= self.Y:
+        while target_pos <= self.Y:
 
-            actualvalue = self.df['value'][targetpos]
-            #print 'actual value for week', targetpos, 'is', actualvalue
-            lastvalue = targetpos - 1
-            ma_start = lastvalue - self.ma_length
-            comp1week = targetpos - 2
-            comp1year = targetpos - 52
-            comp2year = targetpos - 104
-            comp_ma = np.mean(self.df['value'][ma_start:lastvalue])
+            actual_value = self.df['value'][target_pos]
+            last_value = target_pos - 1
+            moving_average_start = last_value - self.MOVING_AVERAGE_LENGTH
+            comp_1_week = target_pos - 2
+            comp_1_year = target_pos - 52
+            comp_2_year = target_pos - 104
+            comp_moving_average = np.mean(self.df['value'][moving_average_start:last_value])
 
-            predicted = self.df['value'][lastvalue] * self.LastValueW + self.df['value'][comp1week] * self.Week1W + self.df['value'][comp1year] * self.Year1W + self.df['value'][comp2year] * self.Year2W + comp_ma * self.MaW
-            #print 'predicted value for week', targetpos, 'is', predicted
+            predicted = self.df['value'][last_value] * self.LAST_VALUE_W + self.df['value'][comp_1_week] * self.WEEK_1_W + self.df['value'][comp_1_year] * self.YEAR_1_W + self.df['value'][comp_2_year] * self.YEAR_2_W + comp_moving_average * self.MOVING_AVERAGE_W
 
-            self.df['predictedvalue'][targetpos] = predicted
+            self.df['predictedvalue'][target_pos] = predicted
 
-            self.error = abs((predicted - actualvalue)/(actualvalue))
-            #print 'error for week', targetpos, 'is', self.error, '\n'
+            self.error = (predicted - actual_value)/(actual_value)
 
-            self.df['error'][targetpos] = self.error
+            self.df['error'][target_pos] = self.error
 
-            targetpos += 1
+            target_pos += 1
 
+        if (self.Y-self.X) >= 12:
+            self.ERRORQ1 = np.mean(self.df['error'][self.X:self.X+12])
+            print 'Average error for first quarter is', self.ERRORQ1
 
-        #print self.df['predictedvalue'][self.X:self.Y]
+        if (self.Y-self.X) >= 24:
+            self.ERRORQ2 = np.mean(self.df['error'][self.X+12:self.X+24])
+            print 'Average error for second quarter is', self.ERRORQ2
 
-        return self.df[['predictedvalue','error', 'value']][self.X:self.Y]
+        if (self.Y-self.X) >= 36:
+            self.ERRORQ3 = np.mean(self.df['error'][self.X+24:self.X+36])
+            print 'Average error for third quarter is', self.ERRORQ3
+
+        if (self.Y-self.X) >= 48:
+            self.ERRORQ4 = np.mean(self.df['error'][self.X+36:self.X+48])
+            print 'Average error for fourth quarter is', self.ERRORQ4
+
+        self.TOTAL_ERROR = np.mean(self.df['error'][self.X:self.Y])
+        print 'Total average error for the predicted time range is', self.TOTAL_ERROR
+        return self.df[['predictedvalue', 'error', 'value']][self.X:self.Y]
+
+def plot(source):
+    plt.plot(source.index, source['predictedvalue'], 'r-')
+    plt.plot(source.index, source['value'], 'b-')
+    #plt.plot(source.index, source['error'], 'r^')
+    plt.xlabel('date')
+    plt.ylabel('value')
+    plt.title('RSA: Predicted CP Apples (red) vs. Actual CP Apples (blue)')
+    plt.show()
+
+#p = CleanData('07/01/2011', '31/12/2014')
+#print p.clean_data()
 
 p124 = Prediction(124,176)
-print p124.predict()
-
-#plt.plot(p124.predict().index, p124.predict()['value'], 'r-')
-#plt.plot(p124.predict().index, p124.predict()['predictedvalue'])
-#plt.plot(p124.predict().index, p124.predict()['error'])
-#plt.axis([p124.X, p124.Y, 3, 15])
-#plt.show()
+plot(p124.predict())
