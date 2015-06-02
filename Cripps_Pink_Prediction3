@@ -23,9 +23,10 @@ class CleanData:
 class Prediction:
 
     def __init__(self, p_start, p_end):
+        
+        #class parameters define begin and and of prediction range
         self.p_start = p_start
         self.p_end = p_end
-        plen = self.p_end - self.p_start
 
         # data directory
         self.DATA = '/home/ronald/data/cripps20112014.csv'
@@ -43,37 +44,33 @@ class Prediction:
         # define moving average length
         self.MOVING_AVERAGE_LENGTH = 52
 
+        #define columns as null for later population (not doing this causes errors when trying to populate in predict() function?)
         self.df['predictedvalue'] = np.nan
         self.df['error'] = np.nan
         self.df['MA'] = np.nan
-        self.ERRORQ1 = None
-        self.ERRORQ2 = None
-        self.ERRORQ3 = None
-        self.ERRORQ4 = None
         self.TOTAL_ERROR = None
-        self.rmq = np.nan
 
     # define prediction function
     def predict(self):
 
         #define each component times their weight
-        lv = self.df['value'][self.p_start-1:self.p_end-1].values * self.LAST_VALUE_W
-        w2 = self.df['value'][self.p_start-2:self.p_end-2].values * self.WEEK_2_W
-        y1 = self.df['value'][self.p_start-52:self.p_end-52].values * self.YEAR_1_W
-        y2 = self.df['value'][self.p_start-104:self.p_end-104].values * self.YEAR_2_W
+        lv = self.df['value'][self.p_start-1:self.p_end-1].values * self.LAST_VALUE_W #previous value (1 week prior)
+        w2 = self.df['value'][self.p_start-2:self.p_end-2].values * self.WEEK_2_W #value 2 weeks prior
+        y1 = self.df['value'][self.p_start-52:self.p_end-52].values * self.YEAR_1_W #value 1 year prior
+        y2 = self.df['value'][self.p_start-104:self.p_end-104].values * self.YEAR_2_W #value 2 years prior
         
-        #define rolling mean component
-        self.df['MA'][self.p_start-self.MOVING_AVERAGE_LENGTH:self.p_end] = pd.rolling_mean(self.df['value'][self.p_start-self.MOVING_AVERAGE_LENGTH:self.p_end], self.MOVING_AVERAGE_LENGTH)
+        #define rolling mean component - first populating it in the dataframe, then assigning to a separate variable with weight
+        self.df['MA'][self.p_start-self.MOVING_AVERAGE_LENGTH:self.p_end] = \
+            pd.rolling_mean(self.df['value'][self.p_start-self.MOVING_AVERAGE_LENGTH:self.p_end], self.MOVING_AVERAGE_LENGTH)
         rm = self.df['MA'][self.p_start:self.p_end].values * self.MOVING_AVERAGE_W
 
         #weighted sum
         self.df['predictedvalue'][self.p_start:self.p_end] = lv + w2 + y1 + y2 + rm
         
-        #error
+        #error, defined as abs(predicted - actual)/actual
         self.df['error'][self.p_start:self.p_end] = abs(self.df['predictedvalue'][self.p_start:self.p_end] - self.df['value'][self.p_start:self.p_end])/self.df['value'][self.p_start:self.p_end]
 
         print self.df['predictedvalue'][self.p_start:self.p_end]
-
         self.TOTAL_ERROR = np.mean(self.df['error'][self.p_start:self.p_end])
         print 'Total average error for the predicted time range is', self.TOTAL_ERROR
         return self.df[['predictedvalue', 'error', 'value']][self.p_start:self.p_end]
