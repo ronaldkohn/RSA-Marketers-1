@@ -29,6 +29,9 @@ class Prediction:
 
         # data directory
         self.DATA = '/home/ronald/data/cripps20112014.csv'
+        
+        # import csv
+        self.df = pd.read_csv(self.DATA)
 
         # Define sum weightings as constants
         self.LAST_VALUE_W = 0.018002537
@@ -40,8 +43,6 @@ class Prediction:
         # define moving average length
         self.MOVING_AVERAGE_LENGTH = 52
 
-        # import csv
-        self.df = pd.read_csv(self.DATA)
         self.df['predictedvalue'] = np.nan
         self.df['error'] = np.nan
         self.df['MA'] = np.nan
