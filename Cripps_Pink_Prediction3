@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import pandas.stats.moments
 
 class CleanData:
     def __init__(self, start, end):
@@ -23,10 +22,10 @@ class CleanData:
 
 class Prediction:
 
-    def __init__(self, X, Y):
-        self.X = X
-        self.Y = Y
-        plen = self.Y - self.X
+    def __init__(self, p_start, p_end):
+        self.p_start = p_start
+        self.p_end = p_end
+        plen = self.p_end - self.p_start
 
         # data directory
         self.DATA = '/home/ronald/data/cripps20112014.csv'
@@ -56,22 +55,21 @@ class Prediction:
     # define prediction function
     def predict(self):
 
-        #self.df['predictedvalue'] = (
-        lv = self.df['value'][self.X-1:self.Y-1].values * self.LAST_VALUE_W
-        w2 = self.df['value'][self.X-2:self.Y-2].values * self.WEEK_2_W
-        y1 = self.df['value'][self.X-52:self.Y-52].values * self.YEAR_1_W
-        y2 = self.df['value'][self.X-104:self.Y-104].values * self.YEAR_2_W
-        self.df['MA'][self.X-self.MOVING_AVERAGE_LENGTH:self.Y] = pd.rolling_mean(self.df['value'][self.X-self.MOVING_AVERAGE_LENGTH:self.Y], self.MOVING_AVERAGE_LENGTH)
-        rm = self.df['MA'][self.X:self.Y].values * self.MOVING_AVERAGE_W
+        lv = self.df['value'][self.p_start-1:self.p_end-1].values * self.LAST_VALUE_W
+        w2 = self.df['value'][self.p_start-2:self.p_end-2].values * self.WEEK_2_W
+        y1 = self.df['value'][self.p_start-52:self.p_end-52].values * self.YEAR_1_W
+        y2 = self.df['value'][self.p_start-104:self.p_end-104].values * self.YEAR_2_W
+        self.df['MA'][self.p_start-self.MOVING_AVERAGE_LENGTH:self.p_end] = pd.rolling_mean(self.df['value'][self.p_start-self.MOVING_AVERAGE_LENGTH:self.p_end], self.MOVING_AVERAGE_LENGTH)
+        rm = self.df['MA'][self.p_start:self.p_end].values * self.MOVING_AVERAGE_W
 
-        self.df['predictedvalue'][self.X:self.Y] = lv + w2 + y1 + y2 + rm
-        self.df['error'][self.X:self.Y] = abs(self.df['predictedvalue'][self.X:self.Y] - self.df['value'][self.X:self.Y])/self.df['value'][self.X:self.Y]
+        self.df['predictedvalue'][self.p_start:self.p_end] = lv + w2 + y1 + y2 + rm
+        self.df['error'][self.p_start:self.p_end] = abs(self.df['predictedvalue'][self.p_start:self.p_end] - self.df['value'][self.p_start:self.p_end])/self.df['value'][self.p_start:self.p_end]
 
-        print self.df['predictedvalue'][self.X:self.Y]
+        print self.df['predictedvalue'][self.p_start:self.p_end]
 
-        self.TOTAL_ERROR = np.mean(self.df['error'][self.X:self.Y])
+        self.TOTAL_ERROR = np.mean(self.df['error'][self.p_start:self.p_end])
         print 'Total average error for the predicted time range is', self.TOTAL_ERROR
-        return self.df[['predictedvalue', 'error', 'value']][self.X:self.Y]
+        return self.df[['predictedvalue', 'error', 'value']][self.p_start:self.p_end]
 
 def plot(source):
     plt.plot(source.index, source['predictedvalue'], 'r-')
