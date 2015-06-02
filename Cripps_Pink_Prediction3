@@ -55,14 +55,20 @@ class Prediction:
     # define prediction function
     def predict(self):
 
+        #define each component times their weight
         lv = self.df['value'][self.p_start-1:self.p_end-1].values * self.LAST_VALUE_W
         w2 = self.df['value'][self.p_start-2:self.p_end-2].values * self.WEEK_2_W
         y1 = self.df['value'][self.p_start-52:self.p_end-52].values * self.YEAR_1_W
         y2 = self.df['value'][self.p_start-104:self.p_end-104].values * self.YEAR_2_W
+        
+        #define rolling mean component
         self.df['MA'][self.p_start-self.MOVING_AVERAGE_LENGTH:self.p_end] = pd.rolling_mean(self.df['value'][self.p_start-self.MOVING_AVERAGE_LENGTH:self.p_end], self.MOVING_AVERAGE_LENGTH)
         rm = self.df['MA'][self.p_start:self.p_end].values * self.MOVING_AVERAGE_W
 
+        #weighted sum
         self.df['predictedvalue'][self.p_start:self.p_end] = lv + w2 + y1 + y2 + rm
+        
+        #error
         self.df['error'][self.p_start:self.p_end] = abs(self.df['predictedvalue'][self.p_start:self.p_end] - self.df['value'][self.p_start:self.p_end])/self.df['value'][self.p_start:self.p_end]
 
         print self.df['predictedvalue'][self.p_start:self.p_end]
